@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.models import HoverTool, LinearColorMapper, ColorBar, FuncTickFormatter, FixedTicker, AdaptiveTicker
-from itertools import combinations, product
-from scipy.stats import skew, kurtosis
+from itertools import combinations, product, zip_longest
+from scipy.stats import skew, kurtosis, gaussian_kde
+
+bar_color = "cornflowerblue"
 
 
 def scatter_with_hover(df, x, y,
@@ -113,7 +116,7 @@ def block_heatmap(df, height=600, width=900):
                  y_range=(0, len(df.index)), tools=["box_zoom", "pan", "reset", "save"], name="heatmap",
                  x_axis_location="above", plot_width=width, plot_height=height, active_drag="box_zoom")
     fig.rect(x="gene_id", y="sample_id", source=source, width=1, height=1,
-                    fill_color={'field': 'value', 'transform': mapper}, line_color=None)
+             fill_color={'field': 'value', 'transform': mapper}, line_color=None)
 
     fig.grid.grid_line_color = None
     fig.axis.axis_line_color = None
@@ -143,6 +146,50 @@ def block_heatmap(df, height=600, width=900):
     ]
     fig.add_tools(hover)
 
+    return fig
+
+
+def plot_histogram(*data, title=None, columns=3):
+    def plot_data(d, a):
+        if d is None:
+            a.axis("off")
+            return
+        a.hist(d, normed=True, color=bar_color, label=None)
+        de = gaussian_kde(d)
+        edge = 1
+        x = pd.Series(np.linspace(edge * d.min(), d.max() / edge, 100))
+        interpolated_y = de(x)
+        cumulative = x.apply(lambda v: de.integrate_box_1d(d.min(), v)) * interpolated_y.max()
+        a.plot(x, interpolated_y, linestyle='--', color="rebeccapurple", label="PDF")
+        a.plot(x, cumulative, linestyle='--', color="dimgray", label="CDF")
+        a.fill_between(x, interpolated_y, interpolate=True, color="rebeccapurple", alpha=0.35, zorder=10)
+        a.fill_between(x, cumulative, interpolate=True, color="dimgray", alpha=0.125, zorder=15)
+        a.set_xlim([x.min(), x.max()])
+
+        a.yaxis.set_ticks_position('none')
+        a.yaxis.set_ticklabels([])
+
+    if columns > len(data):
+        columns = len(data)
+    rows = int(np.ceil(len(data) / columns))
+
+    fig, axes = plt.subplots(rows, columns)
+
+    if columns == 1:
+        plot_data(data[0], axes)
+        if title:
+            axes.set_title(title)
+        axes.set_ylabel("Density")
+        axes.legend()
+    else:
+        flat_axes = axes.flatten()
+        for d, a in zip_longest(data, flat_axes):
+            plot_data(d, a)
+        if title:
+            for t, a in zip(title, flat_axes):
+                a.set_title(t)
+
+    fig.tight_layout()
     return fig
 
 
