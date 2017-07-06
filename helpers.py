@@ -5,6 +5,7 @@ from bokeh.plotting import figure, ColumnDataSource
 from bokeh.models import HoverTool, LinearColorMapper, ColorBar, FuncTickFormatter, FixedTicker, AdaptiveTicker
 from itertools import combinations, product, zip_longest
 from scipy.stats import skew, kurtosis, gaussian_kde
+from collections import Counter
 
 bar_color = "cornflowerblue"
 
@@ -103,7 +104,7 @@ def block_heatmap(df, height=600, width=900):
         the plot data, and rect for the plot object.
     """
     # this colormap blatantly copied from the New York Times.
-    colors = ["#75968f", "#a5bab7", "#c9d9d3", "#e2e2e2", "#dfccce", "#ddb7b1", "#cc7878", "#933b41", "#550b1d"]
+    colors = ["#ADD8E6", "#9AC7E7", "#88B6E9", "#76A5EB", "#6495ED", "#647CD8", "#6564C3", "#654BAE", "#663399"]
     mapper = LinearColorMapper(palette=colors, low=0, high=1)
     cols = {i: c for (i, c) in enumerate(df.columns)}
     index = {i: r for (i, r) in enumerate(df.index)}
@@ -191,6 +192,23 @@ def plot_histogram(*data, title=None, columns=3):
 
     fig.tight_layout()
     return fig
+
+
+def counter_histogram(labels):
+    counts = Counter(labels)
+    fig, ax = plt.subplots()
+    int_keys = [int(k) for k in counts.keys()]
+    ax.bar(int_keys, list(counts.values()), color=bar_color)
+    ax.set_xticks(sorted(int_keys))
+
+    k_range = max(counts.keys()) - min(counts.keys())
+    max_v = max(counts.values())
+
+    def offset(k, v):
+        return (k - k_range * 0.0125, v + max_v * 0.01)
+
+    for (k, v) in counts.items():
+        ax.annotate(str(v), offset(k, v))
 
 
 def add_dummy(dataframe, column_name):
