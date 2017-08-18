@@ -8,7 +8,7 @@ from scipy.stats import skew, kurtosis, gaussian_kde
 from collections import Counter
 
 bar_color = "cornflowerblue"
-
+colors = ["#ADD8E6", "#9AC7E7", "#88B6E9", "#76A5EB", "#6495ED", "#647CD8", "#6564C3", "#654BAE", "#663399"]
 
 def scatter_with_hover(df, x, y,
                        fig=None, cols=None, name=None, marker='x',
